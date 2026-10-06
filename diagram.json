@@ -1,0 +1,198 @@
+{
+    "version": 1,
+    "author": "harsh",
+    "editor": "wokwi",
+    "parts": [
+        {
+            "type": "board-esp32-devkit-c-v4",
+            "id": "esp",
+            "top": 0,
+            "left": 0,
+            "attrs": {}
+        },
+        {
+            "type": "wokwi-dht22",
+            "id": "dht1",
+            "top": -120,
+            "left": 120,
+            "attrs": {
+                "temperature": "4",
+                "humidity": "60"
+            }
+        },
+        {
+            "type": "wokwi-potentiometer",
+            "id": "pot1",
+            "top": 120,
+            "left": 260,
+            "attrs": {}
+        },
+        {
+            "type": "wokwi-slide-switch",
+            "id": "sw1",
+            "top": -20,
+            "left": 280,
+            "attrs": {}
+        },
+        {
+            "type": "wokwi-slide-switch",
+            "id": "sw2",
+            "top": 50,
+            "left": 280,
+            "attrs": {}
+        },
+        {
+            "type": "wokwi-led",
+            "id": "led1",
+            "top": 200,
+            "left": 130,
+            "attrs": {
+                "color": "yellow"
+            }
+        },
+        {
+            "type": "wokwi-led",
+            "id": "led2",
+            "top": 200,
+            "left": 190,
+            "attrs": {
+                "color": "red"
+            }
+        },
+        {
+            "type": "wokwi-resistor",
+            "id": "r1",
+            "top": 260,
+            "left": 120,
+            "attrs": {
+                "value": "220"
+            }
+        },
+        {
+            "type": "wokwi-resistor",
+            "id": "r2",
+            "top": 260,
+            "left": 180,
+            "attrs": {
+                "value": "220"
+            }
+        }
+    ],
+    "connections": [
+        [
+            "esp:TX",
+            "$serialMonitor:RX",
+            "",
+            []
+        ],
+        [
+            "esp:RX",
+            "$serialMonitor:TX",
+            "",
+            []
+        ],
+        [
+            "dht1:VCC",
+            "esp:3V3",
+            "red",
+            []
+        ],
+        [
+            "dht1:SDA",
+            "esp:15",
+            "green",
+            []
+        ],
+        [
+            "dht1:GND",
+            "esp:GND.1",
+            "black",
+            []
+        ],
+        [
+            "pot1:VCC",
+            "esp:3V3",
+            "red",
+            []
+        ],
+        [
+            "pot1:SIG",
+            "esp:34",
+            "orange",
+            []
+        ],
+        [
+            "pot1:GND",
+            "esp:GND.1",
+            "black",
+            []
+        ],
+        [
+            "sw1:2",
+            "esp:4",
+            "blue",
+            []
+        ],
+        [
+            "sw1:1",
+            "esp:GND.1",
+            "black",
+            []
+        ],
+        [
+            "esp:17",
+            "esp:16",
+            "green",
+            []
+        ],
+        [
+            "esp:19",
+            "sw2:2",
+            "blue",
+            []
+        ],
+        [
+            "sw2:1",
+            "esp:18",
+            "blue",
+            []
+        ],
+        [
+            "esp:2",
+            "r1:1",
+            "yellow",
+            []
+        ],
+        [
+            "r1:2",
+            "led1:A",
+            "yellow",
+            []
+        ],
+        [
+            "led1:C",
+            "esp:GND.1",
+            "black",
+            []
+        ],
+        [
+            "esp:5",
+            "r2:1",
+            "red",
+            []
+        ],
+        [
+            "r2:2",
+            "led2:A",
+            "red",
+            []
+        ],
+        [
+            "led2:C",
+            "esp:GND.1",
+            "black",
+            []
+        ]
+    ],
+    "dependencies": {}
+}

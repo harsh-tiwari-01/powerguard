@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PowerGuard</title>
+<style>
+:root{--bg:#07131f;--p:#0e2336;--line:#1c3a55;--ink:#e8f3fb;--mute:#8fa9bd;--ice:#5fd4f4;--ok:#3ecf8e;--warn:#f5b73b;--bad:#ff5c5c}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 500px at 70% -10%,#12395a 0,var(--bg) 60%) fixed;color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:22px 16px 48px}
+header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-bottom:14px}
+h1{margin:0;font-size:1.6rem;letter-spacing:-.02em}
+.sub{margin:0;color:var(--mute);font-size:.9rem}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--line);border-radius:99px;background:var(--p);font-size:.85rem;margin-left:6px}
+.dot{width:9px;height:9px;border-radius:50%;background:#6b7f90;display:inline-block}.dot.on{background:var(--ok)}.dot.off{background:var(--bad)}
+.topic{display:flex;gap:8px;margin-bottom:16px}
+input{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--p);color:var(--ink);font:inherit}
+button{padding:9px 16px;border:1px solid var(--line);border-radius:8px;background:var(--ice);color:#04202c;font:inherit;font-weight:600;cursor:pointer}
+button.alt{background:var(--p);color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--ice);outline-offset:2px}
+.panel{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
+h2{margin:0 0 10px;font-size:.95rem;color:var(--mute);font-weight:600}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.hero{grid-template-columns:1fr}}
+.gauge{text-align:center}
+.gauge svg{width:230px;max-width:100%}
+.track{fill:none;stroke:#18354f;stroke-width:14}
+#arc{fill:none;stroke:var(--ice);stroke-width:14;stroke-linecap:round;transform:rotate(-90deg);transform-origin:90px 90px;transition:stroke-dashoffset .6s,stroke .6s}
+#gT{font-size:34px;font-weight:700;fill:var(--ink);text-anchor:middle;font-variant-numeric:tabular-nums}
+#gS{font-size:9px;fill:var(--mute);text-anchor:middle}
+#stateTxt{font-weight:600;margin-top:2px}
+.ai{display:flex;flex-direction:column;gap:6px}
+.badge{align-self:flex-start;padding:3px 12px;border-radius:99px;font-weight:700;font-size:.85rem;background:#274560;color:var(--ink)}
+.badge.r0{background:#15472f;color:var(--ok)}.badge.r1{background:#4d3a0c;color:var(--warn)}.badge.r2{background:#561c1c;color:var(--bad)}
+.eta{font-size:3rem;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.ai p{margin:0;color:var(--mute);font-size:.92rem}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;font-size:.9rem;margin:6px 0 0}
+.facts dt{color:var(--mute)}.facts dd{margin:0;font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.kpis .panel{margin:0}
+.kpis small{color:var(--mute)}.kpis b{display:block;font-size:1.6rem;font-variant-numeric:tabular-nums}
+.warn{color:var(--bad)}
+canvas{width:100%;height:190px;display:block}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ctl span{color:var(--mute);font-size:.85rem}
+ul{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto}
+li{display:grid;grid-template-columns:70px 150px 1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.9rem}
+li:first-child{border-top:0}li .t{color:var(--mute)}li .k{font-weight:600}
+li.POWER_CUT .k,li.VOLTAGE .k,li.MODBUS .k,li.DOOR .k{color:var(--warn)}
+li.TEMP_ALARM .k,li.AI_WARNING .k{color:var(--bad)}li.POWER_RESTORED .k{color:var(--ok)}li.TEST .k{color:var(--ice)}
+@media(max-width:520px){li{grid-template-columns:60px 1fr}li .m{grid-column:1/-1}}
+
+#fab{position:fixed;right:18px;bottom:18px;z-index:20;padding:12px 20px;border-radius:99px;box-shadow:0 8px 24px #0008}
+#fab i{display:none;position:absolute;top:-3px;right:-3px;width:13px;height:13px;border-radius:50%;background:var(--bad);border:2px solid var(--bg)}
+#chat{position:fixed;right:18px;bottom:76px;z-index:20;width:380px;max-width:calc(100vw - 24px);height:540px;max-height:calc(100vh - 100px);display:none;flex-direction:column;background:var(--p);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px #000a;overflow:hidden}
+#chat.open{display:flex}
+.ch{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;background:#0b1d2e}
+.ch b{display:block}.ch small{color:var(--mute)}
+#msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.m{max-width:88%;padding:9px 13px;border-radius:14px;font-size:.93rem;white-space:pre-wrap}
+.m.bot{background:#14304a;align-self:flex-start;border-bottom-left-radius:4px}
+.m.me{background:var(--ice);color:#04202c;align-self:flex-end;border-bottom-right-radius:4px}
+.m.typing{opacity:.6}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 10px}
+.chip{padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:.82rem;font-weight:500;cursor:pointer}
+.chip:hover{border-color:var(--ice)}
+.cin{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div><h1>PowerGuard</h1><p class="sub">Cold room and power monitor with early warning</p></div>
+  <div><span class="pill"><i class="dot" id="bdot"></i><span id="btxt">Broker not connected</span></span><span class="pill"><i class="dot" id="ddot"></i><span id="dtxt">Device unknown</span></span></div>
+</header>
+<div class="topic"><input id="topic" value="powerguard/harsh-lko-7421/shop1" aria-label="MQTT base topic"><button id="go">Connect</button></div>
+
+<section class="hero">
+  <div class="panel gauge">
+    <svg viewBox="0 0 180 180" role="img" aria-label="Temperature gauge">
+      <circle class="track" cx="90" cy="90" r="70"/>
+      <circle id="arc" cx="90" cy="90" r="70" stroke-dasharray="439.8" stroke-dashoffset="439.8"/>
+      <line x1="90" y1="148" x2="90" y2="168" stroke="#ff5c5c" stroke-width="3"/>
+      <text id="gT" x="90" y="96">--</text><text id="gS" x="90" y="114">limit 8 &deg;C</text>
+    </svg>
+    <div id="stateTxt">Waiting for data</div>
+  </div>
+  <div class="panel ai">
+    <h2>Prediction (runs on the ESP32)</h2>
+    <span class="badge" id="risk">No data</span>
+    <div class="eta" id="eta">--:--</div>
+    <p id="aiTxt">Time left before the room crosses 8 &deg;C.</p>
+    <dl class="facts">
+      <dt>Temperature trend</dt><dd id="slope">--</dd>
+      <dt>Last forecast error</dt><dd id="perr">not measured yet</dd>
+    </dl>
+  </div>
+</section>
+
+<div class="kpis">
+  <div class="panel"><small>Load power</small><b id="pow">--</b></div>
+  <div class="panel"><small>Energy (demo time x60)</small><b id="kwh">--</b></div>
+  <div class="panel"><small>Mains voltage</small><b id="volt">--</b></div>
+  <div class="panel"><small>Outages</small><b id="out">--</b></div>
+</div>
+
+<div class="panel"><h2>Temperature and forecast (dashed = predicted path to the limit)</h2><canvas id="chart"></canvas></div>
+
+<div class="panel"><h2>Simulation controls</h2>
+  <div class="ctl"><button id="bDoor" class="alt">Open door (15 s)</button><button id="bFault" class="alt">Inject compressor fault</button><button id="bClear">Clear faults</button><span>Needs the simulation firmware connected to the same topic.</span></div>
+</div>
+
+<div class="panel"><h2>Alerts</h2><ul id="log"><li><span></span><span class="t">No alerts yet.</span></li></ul></div>
+</main>
+
+<button id="fab" aria-label="Open assistant">Ask PowerGuard<i id="fabDot"></i></button>
+<section id="chat" aria-label="PowerGuard assistant">
+  <div class="ch"><div><b>PowerGuard Assistant</b><small>Live data se jawab deta hai</small></div><button class="chip" id="chatX" aria-label="Close chat">Close</button></div>
+  <div id="msgs" aria-live="polite"></div>
+  <div class="chips" id="chips"></div>
+  <div class="cin"><input id="cin" placeholder="Poochho: temperature kitna hai?" aria-label="Message"><button id="csend">Send</button></div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+const $=id=>document.getElementById(id), LIMIT=8, C=439.8;
+const STATE={NORMAL:["Power on, temperature safe"],POWER_CUT:["Power cut, running without cooling"],ALARM:["Temperature alarm"]};
+const LABEL={POWER_CUT:"Power cut",POWER_RESTORED:"Power restored",TEMP_ALARM:"Temperature alarm",VOLTAGE:"Voltage",MODBUS:"Energy meter",AI_WARNING:"AI warning",DOOR:"Door",TEST:"Simulation"};
+const RISK=["Stable","Watch","Danger"];
+let client,base,pts=[],eta=-1,etaAt=0,last=0;
+
+function conn(ok,t){$("bdot").className="dot "+(ok?"on":"off");$("btxt").textContent=t}
+function connect(){
+  if(client)client.end(true);
+  base=$("topic").value.trim().replace(/\/+$/,"");conn(false,"Connecting...");
+  client=mqtt.connect("wss://broker.hivemq.com:8884/mqtt",{reconnectPeriod:3000});
+  client.on("connect",()=>{conn(true,"Broker connected");client.subscribe(base+"/#")});
+  client.on("close",()=>conn(false,"Broker disconnected"));
+  client.on("message",(t,m)=>{let d;try{d=JSON.parse(m.toString())}catch(e){return}
+    if(t.endsWith("/telemetry"))onTele(d);else if(t.endsWith("/alert"))onAlert(d);else if(t.endsWith("/status"))onStatus(d)});
+}
+function cmd(c){if(client&&client.connected)client.publish(base+"/cmd",c)}
+function onStatus(d){DEV=d.online;$("ddot").className="dot "+(d.online?"on":"off");$("dtxt").textContent=d.online?"Device online":"Device offline"}
+const mmss=s=>{s=Math.max(0,Math.round(s));return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")};
+
+function onTele(d){
+  last=Date.now();LD=d;
+  const col=d.temp>LIMIT?"#ff5c5c":d.temp>6?"#f5b73b":"#5fd4f4";
+  $("arc").style.strokeDashoffset=C*(1-Math.min(1,Math.max(0,d.temp/16)));$("arc").style.stroke=col;
+  $("gT").textContent=d.temp.toFixed(1)+"\u00b0";
+  $("stateTxt").textContent=(STATE[d.state]||[""])[0];
+  $("pow").textContent=d.meter?Math.round(d.power_w)+" W":"Meter offline";
+  $("kwh").textContent=d.meter?d.kwh.toFixed(2)+" kWh":"--";
+  $("volt").textContent=d.mains?d.volt.toFixed(0)+" V":"No mains";
+  $("volt").className=d.mains&&(d.volt<180||d.volt>250)&&d.volt>20?"warn":"";
+  $("out").textContent=d.outages;
+  const risk=d.risk||0;eta=d.eta_s===undefined?-1:d.eta_s;etaAt=Date.now()+eta*1000;
+  $("risk").textContent=RISK[risk];$("risk").className="badge r"+risk;
+  $("slope").textContent=(d.slope>=0?"+":"")+(d.slope||0).toFixed(2)+" \u00b0C/min";
+  if(d.pred_err!==undefined&&d.pred_err!==9999)$("perr").textContent=(d.pred_err>=0?"+":"")+d.pred_err+" s";
+  $("aiTxt").textContent=d.ai_fault?"Compressor is running but the room keeps warming. Likely cooling fault."
+    :eta>=0?"Estimated time before the room crosses "+LIMIT+" \u00b0C.":"No unsafe trend detected.";
+  pts.push({t:Date.now(),v:d.temp});if(pts.length>120)pts.shift();
+  tick();draw();
+}
+function tick(){$("eta").textContent=eta>=0?mmss((etaAt-Date.now())/1000):"--:--"}
+
+function onAlert(d){AL.unshift({t:new Date(),type:d.type,msg:d.msg});if(AL.length>30)AL.pop();botNote(d);
+  const ul=$("log");if(ul.firstChild&&!ul.firstChild.className)ul.innerHTML="";
+  const li=document.createElement("li");li.className=d.type;
+  const a=document.createElement("span");a.className="t";a.textContent=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const b=document.createElement("span");b.className="k";b.textContent=LABEL[d.type]||d.type;
+  const c=document.createElement("span");c.className="m";c.textContent=d.msg;
+  li.append(a,b,c);ul.prepend(li);
+}
+
+function draw(){
+  const c=$("chart"),r=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*r;c.height=h*r;
+  const x=c.getContext("2d");x.scale(r,r);x.clearRect(0,0,w,h);if(!pts.length)return;
+  const t0=pts[0].t,tn=pts[pts.length-1].t,fut=eta>=0?Math.max(eta*1000,30000):30000,t1=tn+fut;
+  const lo=Math.min(0,...pts.map(p=>p.v))-1,hi=Math.max(16,...pts.map(p=>p.v))+1;
+  const X=t=>4+(t-t0)/(t1-t0||1)*(w-8),Y=v=>h-12-(v-lo)/(hi-lo)*(h-22);
+  x.strokeStyle="#ff5c5c";x.setLineDash([6,5]);x.beginPath();x.moveTo(0,Y(LIMIT));x.lineTo(w,Y(LIMIT));x.stroke();
+  x.setLineDash([]);x.strokeStyle="#5fd4f4";x.lineWidth=2;x.beginPath();
+  pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p.v)):x.moveTo(X(p.t),Y(p.v)));x.stroke();
+  if(eta>=0){const p=pts[pts.length-1];x.strokeStyle="#f5b73b";x.setLineDash([4,4]);x.beginPath();x.moveTo(X(p.t),Y(p.v));x.lineTo(X(p.t+eta*1000),Y(LIMIT));x.stroke();
+    x.setLineDash([]);x.fillStyle="#f5b73b";x.beginPath();x.arc(X(p.t+eta*1000),Y(LIMIT),5,0,7);x.fill()}
+}
+setInterval(()=>{tick();if(last&&Date.now()-last>15000){$("stateTxt").textContent="No recent data from the device";$("risk").textContent="No data";$("risk").className="badge";last=0}},1000);
+$("go").onclick=connect;$("bDoor").onclick=()=>cmd("door");$("bFault").onclick=()=>cmd("fault");$("bClear").onclick=()=>cmd("clear");
+
+/* ---------- Chat assistant (rule based, answers from live data) ---------- */
+let LD=null,AL=[],DEV=null,pending=null,greeted=false;
+const $m=$("msgs"),$c=$("chat");
+const HOME=["Status batao","Kitna time bacha?","Bijli gayi to kya karun?","Alerts dikhao","Help"];
+const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+" min "+(s%60)+" sec"};
+const left=()=>fmt((etaAt-Date.now())/1000);
+const HELP="Main ye sab kar sakta hoon:\n- Status, temperature, bijli, voltage, load, energy poochho\n- 'Kitna time bacha?' se AI prediction\n- 'Alerts dikhao' se recent events\n- 'Bijli gayi to kya karun?' se salah\n- 'Door kholo', 'fault lagao', 'clear' se simulation test\n- 'Modbus kya hai' jaise sawal se system samjho\n\nDashboard guide: gauge = temperature, Prediction card = AI countdown, Simulation controls = test buttons.";
+function say(t,w){const d=document.createElement("div");d.className="m "+w;d.textContent=t;$m.append(d);$m.scrollTop=$m.scrollHeight;return d}
+function setChips(a){const c=$("chips");c.innerHTML="";(a||[]).forEach(x=>{const b=document.createElement("button");b.className="chip";b.textContent=x;b.onclick=()=>ask(x);c.append(b)})}
+function reply(r){const ty=say("...","bot typing");setTimeout(()=>{ty.className="m bot";ty.textContent=r.t;$m.scrollTop=$m.scrollHeight;setChips(r.c||HOME)},350)}
+function ask(q){q=q.trim();if(!q)return;say(q,"me");$("cin").value="";reply(answer(q))}
+function botNote(d){say("Naya alert - "+(LABEL[d.type]||d.type)+": "+d.msg,"bot");if(!$c.classList.contains("open"))$("fabDot").style.display="block"}
+
+function answer(q){
+  const s=q.toLowerCase(),d=LD,live=client&&client.connected;
+  const noData={t:"Abhi device se live data nahi aa raha. Check karo: Wokwi simulation chal raha hai? Topic main.cpp wala hi hai? Phir Connect dabao.",c:["Help"]};
+  if(pending){const a=pending;pending=null;
+    if(/^(haan|han|yes|y|ok|kar do|confirm|theek)/.test(s)){
+      if(!live)return{t:"Broker se connected nahi hoon, command nahi gaya. Pehle Connect dabao."};
+      cmd(a);
+      return{t:{door:"Door open command bhej diya (15 sec). Temperature thoda badhega, phir compressor wapas thanda karega.",fault:"Compressor fault inject kiya (simulation). Current chalta rahega par temperature badhega; ~20 sec me AI cooling fault batayega.",clear:"Simulated faults clear kar diye."}[a]}}
+    return{t:"Theek hai, kuch nahi kiya."}}
+  if(/^(hi|hello|hey|hlo|namaste|namaskar)\b/.test(s))return{t:"Namaste! Main PowerGuard assistant hoon. Cold room, bijli, AI prediction ya system ke baare me kuch bhi poochho."};
+  if(/(thank|shukriya|dhanyavad)/.test(s))return{t:"Khushi hui! Aur kuch chahiye to bolo."};
+  if(/(door|darwaz)/.test(s)){pending="door";return{t:"Simulation me door 15 sec ke liye kholun? (sirf test)",c:["Haan","Nahi"]}}
+  if(/(fault|kharab)/.test(s)&&/(inject|lagao|daal|simulate|test)/.test(s)){pending="fault";return{t:"Simulation me compressor fault daalun? (sirf test)",c:["Haan","Nahi"]}}
+  if(/(clear|reset|hatao|normal kar)/.test(s)){pending="clear";return{t:"Saare simulated faults hata dun?",c:["Haan","Nahi"]}}
+  if(/(help|madad|kaise|how|guide|operate|kya kya)/.test(s))return{t:HELP};
+
+  if(/(kya kar|what (should|do)|bachao|save|stock|advice|salah|emergency)/.test(s)){
+    if(!d)return noData;let t;
+    if(d.ai_fault)t="Compressor chal raha hai par kamra garam ho raha hai. Technician ko bulao, tab tak zaroori stock dusre thande fridge me shift karo.";
+    else if(d.state==="ALARM")t="Temperature limit ke upar hai. Zaroori stock turant thandi jagah shift karo aur door band rakho. Dawai ya vaccine ho to supplier ya doctor se pooch lo.";
+    else if(!d.mains)t="Bijli nahi hai.\n1) Door band rakho, baar-baar mat kholo.\n2) Inverter ya generator ho to chalu karo.\n3) Zaroori stock ek jagah rakho, ice packs lagao."+(eta>=0?"\nAI ke hisaab se ~"+left()+" me limit cross hogi.":"");
+    else t="Abhi sab normal hai, kuch karne ki zarurat nahi. Bijli jaye to main yahin salah dunga.";
+    return{t,c:["Kitna time bacha?","Status batao"]}}
+
+  if(/(status|haal|summary|sab theek|kaisa|kya chal|overall|report)/.test(s)){
+    if(!d)return noData;
+    const st={NORMAL:"Sab normal hai",POWER_CUT:"Bijli gayi hui hai",ALARM:"ALARM: temperature limit se upar"}[d.state]||d.state;
+    const ai=(d.risk||0)===0?"koi khatra nahi":d.risk===1?"nazar rakho":"khatra";
+    return{t:st+".\nTemperature: "+d.temp.toFixed(1)+" \u00b0C (limit "+LIMIT+" \u00b0C)\nBijli: "+(d.mains?d.volt.toFixed(0)+" V":"nahi hai")+"\nLoad: "+(d.meter?Math.round(d.power_w)+" W":"meter offline")+"\nAI: "+ai+"\nDevice: "+(DEV===true?"online":DEV===false?"offline":"pata nahi"),c:["Kitna time bacha?","Alerts dikhao","Bijli gayi to kya karun?"]}}
+
+  if(/(temp|tapman|garmi|thanda|thandak|degree)/.test(s)){
+    if(!d)return noData;const t=d.temp;
+    return{t:"Cold room "+t.toFixed(1)+" \u00b0C par hai. "+(t>LIMIT?"Ye limit se upar hai, turant dhyan do.":t>6?"Thoda upar hai, compressor chal raha hoga.":"Safe range me hai."),c:["Kitna time bacha?","Status batao"]}}
+
+  if(/(bijli|mains|light|power ?cut|outage|blackout)/.test(s)){
+    if(!d)return noData;
+    return{t:(d.mains?"Bijli aa rahi hai":"Abhi bijli nahi hai (power cut)")+". Ab tak "+d.outages+" outage record hue."+(d.mains?"":" Temperature par nazar rakho, AI ETA de raha hai."),c:["Kitna time bacha?","Bijli gayi to kya karun?"]}}
+
+  if(/(volt)/.test(s)){if(!d)return noData;
+    return{t:d.mains?"Voltage "+d.volt.toFixed(0)+" V hai. Safe range 180 se 250 V.":"Bijli nahi hai, isliye voltage 0 hai."}}
+
+  if(/(energy|kwh|unit|bill)/.test(s)){if(!d)return noData;
+    return{t:d.meter?"Ab tak lagbhag "+d.kwh.toFixed(2)+" kWh. (Demo me time 60 guna tez chalta hai.)":"Energy meter offline hai."}}
+
+  if(/(watt|load|compressor|current|\bamps?\b|power)/.test(s)){if(!d)return noData;
+    return{t:d.meter?"Load "+Math.round(d.power_w)+" W, current "+d.amps.toFixed(2)+" A. Compressor "+(d.amps>1?"chal raha hai.":"standby me hai."):"Energy meter offline hai (Modbus link check karo)."}}
+
+  if(/(predict|\beta\b|kitna time|kab tak|forecast|\bai\b|early|risk|bacha)/.test(s)){
+    if(!d)return noData;let t;
+    if(d.ai_fault)t="AI ko lagta hai compressor chal raha hai par kamra thanda nahi ho raha. Cooling fault ka shaq hai.";
+    else if(eta>=0)t="AI ka andaza: lagbhag "+left()+" me temperature "+LIMIT+" \u00b0C cross karega. Trend "+(d.slope>=0?"+":"")+d.slope.toFixed(2)+" \u00b0C/min hai.";
+    else t="Abhi koi unsafe trend nahi hai. AI tab ETA deta hai jab bijli jaye ya compressor chalte hue bhi kamra garam hota rahe.";
+    return{t,c:["Bijli gayi to kya karun?","Status batao"]}}
+
+  if(/(alert|history|log\b|events?|kya hua|warning)/.test(s)){
+    if(!AL.length)return{t:"Abhi tak koi alert nahi aaya."};
+    return{t:"Recent alerts:\n"+AL.slice(0,5).map(a=>a.t.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+"  "+(LABEL[a.type]||a.type)+": "+a.msg).join("\n")}}
+
+  if(/modbus/.test(s))return{t:"Modbus ek industrial protocol hai: master (ESP32) slave (energy meter) se registers padhta hai. Yahan voltage, current, power aur energy isi se aate hain. Data me CRC16 hota hai taaki galti pakdi jaye."};
+  if(/mqtt/.test(s))return{t:"MQTT halka protocol hai: device topic par data publish karta hai aur dashboard subscribe karta hai. Beech me broker (HiveMQ) hota hai."};
+  if(/(lwt|last will)/.test(s))return{t:"LWT (Last Will): device achanak band ho jaye to broker khud 'offline' message bhej deta hai. Upar Device online/offline wahi dikhata hai."};
+  if(/(esp32|freertos|task)/.test(s))return{t:"ESP32 par FreeRTOS ke 6 tasks chalte hain: sensor, logic+AI, indicators, MQTT, Modbus master aur meter simulation. Queue aur mutex se data safe tarike se baatta jaata hai."};
+  if(/(project|powerguard|about|kya hai|kaun)/.test(s))return{t:"PowerGuard chhoti dukaan, clinic aur cold room ke liye power-cut aware monitor hai: bijli jaane ka record, temperature alarm, Modbus energy meter, aur AI early warning jo batata hai limit kab cross hogi. Abhi ye Wokwi simulation me chal raha hai, real hardware par test nahi hua."};
+
+  return{t:"Ye mujhe samajh nahi aaya. Neeche wale options try karo, ya 'Help' likho.",c:HOME}}
+
+$("fab").onclick=()=>{$c.classList.toggle("open");$("fabDot").style.display="none";
+  if($c.classList.contains("open")&&!greeted){greeted=true;reply({t:"Namaste! Main PowerGuard assistant hoon. Status, bijli, AI prediction ya system ke baare me kuch bhi poochho. Neeche ke options dabake bhi puch sakte ho.",c:HOME})}};
+$("chatX").onclick=()=>$c.classList.remove("open");
+$("csend").onclick=()=>ask($("cin").value);
+$("cin").addEventListener("keydown",e=>{if(e.key==="Enter")ask(e.target.value)});
+
+addEventListener("resize",draw);connect();
+</script>
+</body>
+</html>
